@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -45,4 +46,7 @@ public class StandardReference {
 
     @Column(name = "LAST_UPDATED_DATETIME")
     private Date lastUpdatedDateTime;
+
+    @OneToMany(mappedBy = "standardReference")
+    private List<NsiSubType> nsiSubTypes;
 }

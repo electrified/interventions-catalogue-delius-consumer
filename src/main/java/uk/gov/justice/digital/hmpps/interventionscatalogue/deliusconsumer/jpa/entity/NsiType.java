@@ -5,43 +5,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import java.util.Date;
+import java.util.List;
 
-/*
-"NSI_TYPE_ID" NUMBER NOT NULL ENABLE,
-	"CODE" VARCHAR2(20) NOT NULL ENABLE,
-	"DESCRIPTION" VARCHAR2(200) NOT NULL ENABLE,
-	"OFFENDER_LEVEL" NUMBER NOT NULL ENABLE,
-	"EVENT_LEVEL" NUMBER NOT NULL ENABLE,
-	"ALLOW_ACTIVE_DUPLICATES" NUMBER NOT NULL ENABLE,
-	"ALLOW_INACTIVE_DUPLICATES" NUMBER NOT NULL ENABLE,
-	"MINIMUM_LENGTH" NUMBER,
-	"MAXIMUM_LENGTH" NUMBER,
-	"UNITS_ID" NUMBER,
-	"ENFORCEMENT_TYPE" NUMBER DEFAULT 0 NOT NULL ENABLE,
-	"SELECTABLE" CHAR(1) NOT NULL ENABLE,
-	"CREATED_BY_USER_ID" NUMBER NOT NULL ENABLE,
-	"CREATED_DATETIME" DATE NOT NULL ENABLE,
-	"LAST_UPDATED_USER_ID" NUMBER NOT NULL ENABLE,
-	"LAST_UPDATED_DATETIME" DATE NOT NULL ENABLE,
-	"ROW_VERSION" NUMBER DEFAULT 0 NOT NULL ENABLE,
-	"TRAINING_SESSION_ID" NUMBER,
-	"TERM_COUNT" CHAR(1),
-	"RATE_CARD_FLAG" CHAR(1) DEFAULT 'N' NOT NULL ENABLE,
-	"CRC_WORK_REQUESTS_DIARY_FLAG" CHAR(1) DEFAULT 'N' NOT NULL ENABLE,
-	"NSI_PURPOSE_ID" NUMBER DEFAULT NULL NOT NULL ENABLE,
-	"NSI_TRANSFER_TYPE_ID" NUMBER,
-	"ADDITIONAL_IDENTIFIER_TYPE1_ID" NUMBER,
-	"ADDITIONAL_IDENTIFIER_TYPE2_ID" NUMBER,
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -94,4 +70,9 @@ public class NsiType {
     @ManyToOne
     @JoinColumn(name = "NSI_PURPOSE_ID")
     private StandardReference nsiPurposeId;
+
+    @OneToMany(mappedBy = "nsiType",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<NsiSubType> nsiSubTypes;
 }

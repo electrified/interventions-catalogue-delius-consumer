@@ -6,9 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.MapsId;
 import javax.persistence.Table;
 
 @Data
@@ -16,15 +19,21 @@ import javax.persistence.Table;
 @AllArgsConstructor
 @Builder
 @Entity
-@IdClass(NsiSubTypeId.class)
 @Table(name = "R_NSI_TYPE_SUB_TYPE")
 public class NsiSubType {
-    @Id
-    private long nsiSubTypeId;
-
-    @Id
-    private long nsiTypeId;
+    @EmbeddedId
+    private NsiSubTypeId id;
 
     @Column(name = "ROW_VERSION")
     private long rowVersion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("nsiTypeId")
+    @JoinColumn(name = "NSI_TYPE_ID")
+    private NsiType nsiType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("standardReferenceId")
+    @JoinColumn(name = "NSI_SUB_TYPE_ID")
+    private StandardReference standardReference;
 }
