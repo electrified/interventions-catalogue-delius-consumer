@@ -15,6 +15,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -72,7 +73,13 @@ public class NsiType {
     private StandardReference nsiPurposeId;
 
     @OneToMany(mappedBy = "nsiType",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
-    private List<NsiSubType> nsiSubTypes;
+            cascade = CascadeType.PERSIST,
+            orphanRemoval = false)
+    @Builder.Default
+    private List<NsiSubType> nsiSubTypes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "nsiType",
+            cascade = CascadeType.PERSIST,
+            orphanRemoval = false)
+    private List<NsiTypeProbationArea> probationAreas;
 }

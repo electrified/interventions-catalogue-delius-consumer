@@ -13,9 +13,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import java.util.Date;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -71,4 +73,7 @@ public class ProbationArea {
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "SPG_ACTIVE_ID")
     private StandardReference spgActiveId;
+
+    @OneToMany(mappedBy = "probationArea")
+    private List<NsiTypeProbationArea> nsiTypeProbationAreas;
 }
