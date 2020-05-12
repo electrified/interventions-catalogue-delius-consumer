@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
@@ -30,10 +31,12 @@ public class NsiTypeProbationArea {
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("nsiTypeId")
     @JoinColumn(name = "NSI_TYPE_ID")
+    @ToString.Exclude
     private NsiType nsiType;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("standardReferenceId")
     @JoinColumn(name = "PROBATION_AREA_ID")
+    @ToString.Exclude
     private ProbationArea probationArea;
 }

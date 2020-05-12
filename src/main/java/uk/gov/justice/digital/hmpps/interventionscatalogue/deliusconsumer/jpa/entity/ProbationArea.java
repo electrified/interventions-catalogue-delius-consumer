@@ -74,6 +74,6 @@ public class ProbationArea {
     @JoinColumn(name = "SPG_ACTIVE_ID")
     private StandardReference spgActiveId;
 
-    @OneToMany(mappedBy = "probationArea")
+    @OneToMany(mappedBy = "probationArea", cascade = CascadeType.ALL)
     private List<NsiTypeProbationArea> nsiTypeProbationAreas;
 }

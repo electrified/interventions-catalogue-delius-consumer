@@ -1,4 +1,4 @@
-# interventions-catalogue-delius-consumer
+# interventions-catalogue-delius-consumer - ALPHA
 
 This application is a Spring Boot app that consumes from an SQS queue, and performs CRUD operations on the Delius NSI tables.
 

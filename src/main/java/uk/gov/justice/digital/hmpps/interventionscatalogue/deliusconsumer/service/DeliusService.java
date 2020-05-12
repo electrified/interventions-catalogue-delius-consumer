@@ -7,12 +7,14 @@ import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.AvroDataEvent;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.AvroInterventionSubType;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.AvroInterventionType;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.AvroProvider;
+import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.AvroProviderInterventionLink;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.avro.EventType;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.Address;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.NsiSubType;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.NsiSubTypeId;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.NsiType;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.NsiTypeProbationArea;
+import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.NsiTypeProbationAreaId;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.ProbationArea;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.ReferenceDataMaster;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.StandardReference;
@@ -25,9 +27,9 @@ import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.re
 
 import javax.transaction.Transactional;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.service.PlaceholderDataGenerator.GENERIC_NSI;
 import static uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.service.PlaceholderDataGenerator.NPS;
@@ -61,6 +63,8 @@ public class DeliusService {
             generateInterventionTypeUpdate((AvroInterventionType)event.getEntity(), event.getEventType());
         } else if (event.getEntity() instanceof AvroInterventionSubType) {
             generateInterventionSubTypeUpdate((AvroInterventionSubType)event.getEntity(), event.getEventType());
+        } else if (event.getEntity() instanceof AvroProviderInterventionLink) {
+            generateProviderInterventionTypeUpdate((AvroProviderInterventionLink)event.getEntity(), event.getEventType());
         }
     }
 
@@ -125,45 +129,72 @@ public class DeliusService {
     private void generateInterventionSubTypeUpdate(final AvroInterventionSubType entity, final EventType eventType) {
         log.info(entity.toString());
 
-        var existingParentEntity = nsiTypeRepository.getByCode(entity.getDeliusParentNsiCode());
+        var existingNsiType = nsiTypeRepository.getByCode(entity.getDeliusParentNsiCode());
 
-        var existingEntity = existingParentEntity != null &&
-                             existingParentEntity.getNsiSubTypes() != null
-                ? existingParentEntity.getNsiSubTypes().stream()
+        var existingNsiSubType = existingNsiType != null &&
+                             existingNsiType.getNsiSubTypes() != null
+                ? existingNsiType.getNsiSubTypes().stream()
                 .filter(nst -> nst.getStandardReference().getCodeValue().equals(entity.getDeliusCode()))
                 .findFirst().orElse(null) : null;
 
         if (eventType == EventType.CREATED) {
-            if (existingEntity != null) {
+            if (existingNsiSubType != null) {
                 throw new DeliusDataException("Create message received but NsiSubType already exists with that code. Doing nothing for safety");
             } else {
                 var subtypeStandardReference = mapInterventionSubTypeToDelius(entity);
                 standardReferenceRepository.save(subtypeStandardReference);
                 var nsiSubType = NsiSubType.builder()
-                        .id(new NsiSubTypeId(subtypeStandardReference.getStandardReferenceListId(), existingParentEntity.getNsiTypeId()))
-                        .nsiType(existingParentEntity)
+                        .id(new NsiSubTypeId(subtypeStandardReference.getStandardReferenceListId(), existingNsiType.getNsiTypeId()))
+                        .nsiType(existingNsiType)
                         .standardReference(subtypeStandardReference)
                         .build();
 
                 nsiSubTypeRepository.save(nsiSubType);
 
-                existingParentEntity.getNsiSubTypes().add(nsiSubType);
-                nsiTypeRepository.save(existingParentEntity);
+                existingNsiType.getNsiSubTypes().add(nsiSubType);
+                nsiTypeRepository.save(existingNsiType);
             }
         }
         else if (eventType == EventType.UPDATED) {
-            if (existingEntity != null) {
-                standardReferenceRepository.save(updateSubType(existingEntity.getStandardReference(), entity));
+            if (existingNsiSubType != null) {
+                standardReferenceRepository.save(updateSubType(existingNsiSubType.getStandardReference(), entity));
             } else {
                 throw new DeliusDataException("Update message received but NsiSubType does not exist");
             }
 
         } else if (eventType == EventType.DELETED) {
-            if (existingEntity != null) {
-                existingEntity.getStandardReference().setSelectable('N');
-                standardReferenceRepository.save(existingEntity.getStandardReference());
+            if (existingNsiSubType != null) {
+                existingNsiSubType.getStandardReference().setSelectable('N');
+                standardReferenceRepository.save(existingNsiSubType.getStandardReference());
             } else {
                 throw new DeliusDataException("Delete message received but NsiSubType does not exist");
+            }
+        }
+    }
+
+    private void generateProviderInterventionTypeUpdate(AvroProviderInterventionLink entity, EventType eventType) {
+        log.info(entity.toString());
+
+        var providerEntity = probationAreaRepository.getByCode(entity.getDeliusProviderCode());
+        var interventionEntity = providerEntity.getNsiTypeProbationAreas() != null ? providerEntity.getNsiTypeProbationAreas()
+                .stream()
+                .filter(match -> match.getNsiType().getCode().equals(entity.getDeliusInterventionCode()))
+                .findFirst().orElse(null) : null;
+
+        if (eventType == EventType.CREATED) {
+            if (interventionEntity != null) {
+                throw new DeliusDataException("Create message received but NsiTypeProbationArea already exists. Doing nothing for safety");
+            } else {
+                var nsiType = nsiTypeRepository.getByCode(entity.getDeliusInterventionCode());
+                providerEntity = getProviderToNsiTypeLink(providerEntity, nsiType);
+                probationAreaRepository.save(providerEntity);
+            }
+        } else if (eventType == EventType.DELETED) {
+            if (interventionEntity != null) {
+                providerEntity.getNsiTypeProbationAreas().remove(interventionEntity);
+                probationAreaRepository.save(providerEntity);
+            } else {
+                throw new DeliusDataException("Delete message received but NsiTypeProbationArea does not exist");
             }
         }
     }
@@ -274,50 +305,18 @@ public class DeliusService {
                 .build(), catalogueProvider);
     }
 
-    private NsiType linkProviderToNsiType(final String providerCode, final String nsiCode) {
-        NsiType nsiType = nsiTypeRepository.getByCode(nsiCode);
-        ProbationArea provider = probationAreaRepository.getByCode(providerCode);
-
+    private ProbationArea getProviderToNsiTypeLink(final ProbationArea provider, final NsiType nsiType) {
         NsiTypeProbationArea nsiTypeProbationArea = new NsiTypeProbationArea();
         nsiTypeProbationArea.setNsiType(nsiType);
         nsiTypeProbationArea.setProbationArea(provider);
+        nsiTypeProbationArea.setId(new NsiTypeProbationAreaId(provider.getProbationAreaId(), nsiType.getNsiTypeId()));
 
-        nsiType.getProbationAreas()
-                .add(nsiTypeProbationArea);
-
-        return nsiTypeRepository.save(nsiType);
-    }
-
-    private NsiType unlinkProviderFromNsiType(final String providerCode, final String nsiCode) {
-        NsiType nsiType = nsiTypeRepository.getByCode(nsiCode);
-        Optional<NsiTypeProbationArea> probationAreaToRemove =
-                nsiType
-                .getProbationAreas().stream()
-                .filter(provider -> provider.getProbationArea().getCode().equals(providerCode))
-                .findFirst();
-
-        if(probationAreaToRemove.isPresent()) {
-            nsiType.getProbationAreas().remove(probationAreaToRemove);
+        if(provider.getNsiTypeProbationAreas() == null) {
+            provider.setNsiTypeProbationAreas(new ArrayList<>());
         }
-        return nsiTypeRepository.save(nsiType);
-    }
 
-    private NsiType linkNsiTypeToNsiSubType(final String nsiCode, final Long nsiSubTypeId) {
-        NsiType nsiType = nsiTypeRepository.getByCode(nsiCode);
-        NsiSubType nsiSubType = nsiSubTypeRepository.getOne(new NsiSubTypeId(nsiSubTypeId, nsiType.getNsiTypeId()));
-        nsiType.getNsiSubTypes().add(nsiSubType);
-        return nsiTypeRepository.save(nsiType);
-    }
+        provider.getNsiTypeProbationAreas().add(nsiTypeProbationArea);
 
-    private NsiType unlinkNsiTypeFromNsiSubType(final String nsiCode, final Long nsiSubTypeId) {
-        NsiType nsiType = nsiTypeRepository.getByCode(nsiCode);
-        Optional<NsiSubType> subTypeToRemove = nsiType.getNsiSubTypes().stream()
-                .filter(subtype -> subtype.getId().equals(nsiSubTypeId))
-                .findFirst();
-
-        if(subTypeToRemove.isPresent()) {
-            nsiType.getNsiSubTypes().remove(subTypeToRemove);
-        }
-        return nsiTypeRepository.save(nsiType);
+        return provider;
     }
 }
