@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.service;
 
+import com.google.common.base.Strings;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,11 @@ public class DeliusService {
     private final PartitionAreaRepository partitionAreaRepository;
 
     public ProbationArea getProbationArea(final String code) {
-        return probationAreaRepository.getByCode(code);
+        var areas = probationAreaRepository.getProbationAreaByCode(Strings.padEnd(code, 3, ' '));
+        if (areas.size() == 0) {
+            return null;
+        }
+        return areas.get(0);
     }
 
     public NsiType getNsiType(final String code) {
@@ -65,18 +70,21 @@ public class DeliusService {
             generateInterventionSubTypeUpdate((AvroInterventionSubType)event.getEntity(), event.getEventType());
         } else if (event.getEntity() instanceof AvroProviderInterventionLink) {
             generateProviderInterventionTypeUpdate((AvroProviderInterventionLink)event.getEntity(), event.getEventType());
+        } else {
+            log.error("Unrecognised event entity");
         }
     }
 
     private void generateProviderUpdate(final AvroProvider entity, final EventType eventType) {
         log.info(entity.toString());
 
-        var existingEntity = probationAreaRepository.getByCode(entity.getDeliusCode());
+        var existingEntity = getProbationArea(entity.getDeliusCode());
 
         if (eventType == EventType.CREATED) {
             if (existingEntity != null) {
                 throw new DeliusDataException("Create message received but Provider already exists with that code. Doing nothing for safety");
             } else {
+                log.info(String.format("Saving Probation area %s", entity.getDeliusCode()));
                 probationAreaRepository.save(mapProviderToDelius(entity));
             }
         }
@@ -175,7 +183,7 @@ public class DeliusService {
     private void generateProviderInterventionTypeUpdate(AvroProviderInterventionLink entity, EventType eventType) {
         log.info(entity.toString());
 
-        var providerEntity = probationAreaRepository.getByCode(entity.getDeliusProviderCode());
+        var providerEntity = getProbationArea(entity.getDeliusProviderCode());
         var interventionEntity = providerEntity.getNsiTypeProbationAreas() != null ? providerEntity.getNsiTypeProbationAreas()
                 .stream()
                 .filter(match -> match.getNsiType().getCode().equals(entity.getDeliusInterventionCode()))

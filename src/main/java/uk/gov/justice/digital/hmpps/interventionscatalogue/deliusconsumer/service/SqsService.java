@@ -17,7 +17,6 @@ import java.io.IOException;
 @Slf4j
 @AllArgsConstructor
 public class SqsService {
-    private final AmazonSQSAsync amazonSqsClient;
     private final DeliusService deliusService;
     private final AvroDeserialiser avroDeserialiser;
 

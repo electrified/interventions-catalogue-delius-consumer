@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.en
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.ProbationArea;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.ReferenceDataMaster;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.StandardReference;
+import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.repository.PartitionAreaRepository;
+import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.repository.ProbationAreaRepository;
 
 import javax.transaction.Transactional;
 import java.util.Date;
@@ -27,6 +29,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.service.PlaceholderDataGenerator.TEST_AREA;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest

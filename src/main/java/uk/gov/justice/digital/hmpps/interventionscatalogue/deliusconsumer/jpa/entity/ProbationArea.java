@@ -32,7 +32,7 @@ public class ProbationArea {
     @Column(name = "PROBATION_AREA_ID")
     private long probationAreaId;
 
-    @Column(name = "CODE")
+    @Column(name = "CODE", columnDefinition = "char", length = 3)
     private String code;
 
     @Column(name = "DESCRIPTION")
@@ -74,6 +74,6 @@ public class ProbationArea {
     @JoinColumn(name = "SPG_ACTIVE_ID")
     private StandardReference spgActiveId;
 
-    @OneToMany(mappedBy = "probationArea", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "probationArea", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NsiTypeProbationArea> nsiTypeProbationAreas;
 }

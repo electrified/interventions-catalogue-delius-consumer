@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import uk.gov.justice.digital.hmpps.interventionscatalogue.deliusconsumer.jpa.entity.StandardReference;
 
 public interface StandardReferenceRepository extends JpaRepository<StandardReference, Long> {
-    public StandardReference getStandardReferenceByCodeValue(final String codeValue);
+    StandardReference getStandardReferenceByCodeValue(final String codeValue);
 }
