@@ -5,12 +5,13 @@ This application is a Spring Boot app that consumes from an SQS queue, and perfo
 It was written as an investigatory spike to prove out various concepts for the Interventions Catalogue work.
 
 Concepts demonstrated:
-- Consuming Avro JSON messages and updating a database schema
+- Consuming Avro JSON messages and updating an Oracle database schema
+- Tables necessary to update to create NSI reference data
 - SQS message consumption
 
 Notes/Limitations
-- A delete message doesn't remove anything, just sets the active flag to false
-- Doesn't consider the version number of messages - applies them in the order received
+- A delete message sets the active/selectable flag to false
+- Currently doesn't consider the version number of messages - applies them in the order received
 
 ## Running the application
 
@@ -40,11 +41,19 @@ CREATE USER DELIUS_APP_SCHEMA IDENTIFIED BY deliuspass;
 GRANT CONNECT, CREATE SESSION, RESOURCE, DBA TO DELIUS_APP_SCHEMA;
 ```
 
-Reconnect as the new user and run the SQL file to create the schema. (The unlicenced version of Flyway does not support Oracle 11)
+Reconnect as the new user and run the SQL file to create the schema. (The unlicensed version of Flyway does not support Oracle 11)
+
+The delius schema SQL file can be obtained from the [Community API](https://github.com/ministryofjustice/community-api/blob/master/delius.sql) repository.
 ```
 sqlplus DELIUS_APP_SCHEMA/deliuspass@//localhost:1521/XE
 
 @/u01/app/oracle/oradata/delius.sql
 
 ALTER SESSION SET CURRENT_SCHEMA = DELIUS_APP;
+```
+
+Finally the application can be started:
+
+```bash
+./gradlew bootRun
 ```
